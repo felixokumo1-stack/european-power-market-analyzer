@@ -4,12 +4,11 @@
 # Date: January 2026
 # Description: Automated merit order dispatch and scenario analysis
 # =====================================================================
-
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-import os
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -26,27 +25,32 @@ print()
 
 # ===== CONFIGURATION & PATHS =====
 
+# 1. Get the directory where THIS script is running
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(BASE_DIR)
 
-DATA_DIR = os.path.join(PROJECT_DIR, 'Data')
-OUTPUT_DIR = os.path.join(PROJECT_DIR, 'Outputs')
+# 2. Define Data path relative to this script
+# (Since the script and Data folder are now side-by-side in the root)
+DATA_DIR = os.path.join(BASE_DIR, 'Data')
+
+# 3. Define Output directories (Optional for cloud, but good for local)
+OUTPUT_DIR = os.path.join(BASE_DIR, 'Outputs')
 CHARTS_DIR = os.path.join(OUTPUT_DIR, 'charts')
 
+# Create directories if they don't exist (prevent errors)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CHARTS_DIR, exist_ok=True)
 
-print(f"📁 Project Directory: {PROJECT_DIR}")
+print(f"📁 Base Directory: {BASE_DIR}")
 print(f"📁 Data Directory: {DATA_DIR}")
-print(f"📁 Output Directory: {OUTPUT_DIR}")
 print()
 
 # ===== DATA LOADING FUNCTIONS =====
 
 def load_plant_database():
-    """Load power plant database with robust encoding handling"""
-    print("📥 Loading Plant Database...")
+    """Load power plant database with robust encoding handling and path fix"""
+    print(f"📥 Loading Plant Database from: {DATA_DIR}...")
     
+    # Use the robust DATA_DIR path
     file_path = os.path.join(DATA_DIR, 'German_Power_Plant_Database_2024_CORRECTED.csv')
     
     try:
@@ -74,6 +78,7 @@ def load_plant_database():
     
     except FileNotFoundError:
         print(f"   ❌ ERROR: Could not find file at: {file_path}")
+        print(f"   ⚠️  Check that the file exists in your GitHub 'Data' folder!")
         return None
     except Exception as e:
         print(f"   ❌ ERROR: {str(e)}")
@@ -81,9 +86,10 @@ def load_plant_database():
 
 
 def load_scenarios():
-    """Load market scenarios"""
-    print("📥 Loading Market Scenarios...")
+    """Load market scenarios with robust encoding handling and path fix"""
+    print(f"📥 Loading Market Scenarios from: {DATA_DIR}...")
     
+    # Use the robust DATA_DIR path
     file_path = os.path.join(DATA_DIR, 'Market_Scenarios_2024.csv')
     
     try:
@@ -110,6 +116,7 @@ def load_scenarios():
     
     except FileNotFoundError:
         print(f"   ❌ ERROR: Could not find file at: {file_path}")
+        print(f"   ⚠️  Check that the file exists in your GitHub 'Data' folder!")
         return None
     except Exception as e:
         print(f"   ❌ ERROR: {str(e)}")
@@ -1021,4 +1028,5 @@ if __name__ == "__main__":
         print("="*70)
         
     else:
+
         print("❌ DATA LOADING FAILED!")
