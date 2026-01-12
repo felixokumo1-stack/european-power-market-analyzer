@@ -1,0 +1,11 @@
+Scenario_Name,Demand_MW,Carbon_Price_EUR_ton,Wind_Availability_Percent,Solar_Availability_Percent,Period_Type,Season
+Base_Load_Summer,45000,80,35,25,Base,Summer
+Peak_Load_Winter,65000,80,45,5,Peak,Winter
+Off_Peak_Spring,35000,80,40,20,Off-Peak,Spring
+High_Wind_Day,48000,80,65,15,Base,Fall
+Low_Renewable_Day,52000,80,15,8,Peak,Winter
+High_Solar_Summer,42000,80,30,40,Peak,Summer
+Low_Carbon_Price,48000,40,35,20,Base,Spring
+High_Carbon_Price,48000,120,35,20,Base,Spring
+Extreme_Peak,70000,80,25,3,Peak,Winter
+Extreme_Low_Demand,30000,80,50,30,Off-Peak,Summer
