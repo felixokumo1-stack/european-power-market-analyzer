@@ -12,22 +12,6 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-# 1. DEFINE PATHS FIRST
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Note: Using capital 'Data' to match your GitHub folder name exactly
-DATA_DIR = os.path.join(BASE_DIR, 'Data')
-
-# 2. NOW RUN THE DEBUGGER (Safe because DATA_DIR is now defined)
-print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
-print(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
-
-if os.path.exists(DATA_DIR):
-    print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
-else:
-    print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
-
-# Rest of your configuration prints...
-
 # Set display options
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
@@ -39,52 +23,152 @@ print("="*70)
 print(f"Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print()
 
-# ===== CONFIGURATION & PATHS =====
+# ===== CONFIGURATION & PATHS WITH MULTIPLE FALLBACKS =====
 
-# 1. Get the directory where THIS script is running
+def find_data_directory():
+    """
+    Find the Data directory using multiple fallback paths
+    This ensures compatibility with different deployment environments
+    """
+    # Get the directory where THIS script is running
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # List of possible data directory locations (in order of priority)
+    possible_paths = [
+        # 1. Same directory as script
+        os.path.join(script_dir, 'Data'),
+        
+        # 2. Current working directory
+        os.path.join(os.getcwd(), 'Data'),
+        
+        # 3. Parent directory (one level up)
+        os.path.join(os.path.dirname(script_dir), 'Data'),
+        
+        # 4. Lowercase 'data' folder (Linux compatibility)
+        os.path.join(script_dir, 'data'),
+        os.path.join(os.getcwd(), 'data'),
+        
+        # 5. Direct current working directory (files in root)
+        os.getcwd(),
+        
+        # 6. Script directory (files in root with script)
+        script_dir,
+    ]
+    
+    print("🔍 Searching for Data directory...")
+    print(f"   Script location: {script_dir}")
+    print(f"   Working directory: {os.getcwd()}")
+    print()
+    
+    # Try each path
+    for i, path in enumerate(possible_paths, 1):
+        print(f"   Attempt {i}: {path}")
+        if os.path.exists(path):
+            # Check if it's a directory or if files exist there
+            if os.path.isdir(path):
+                files = os.listdir(path)
+                print(f"      ✅ Found! Contains: {files[:5]}...")  # Show first 5 files
+                return path
+            else:
+                print(f"      ⚠️  Exists but not a directory")
+        else:
+            print(f"      ❌ Not found")
+    
+    # If nothing found, return current working directory as fallback
+    print(f"\n   ⚠️  WARNING: Data directory not found in standard locations")
+    print(f"   📁 Using fallback: {os.getcwd()}")
+    return os.getcwd()
+
+
+# Find the data directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# ===== DEBUGGING TOOL: DELETE THIS AFTER FIXING =====
-#print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
-#rint(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
-#if os.path.exists(DATA_DIR):
-    #print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
-#else:
-   # print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
-# ====================================================
+DATA_DIR = find_data_directory()
 
-# 2. Define Data path relative to this script
-# (Since the script and Data folder are now side-by-side in the root)
-DATA_DIR = os.path.join(BASE_DIR, 'Data')
-# ===== DEBUGGING TOOL: DELETE THIS AFTER FIXING =====
-#print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
-#print(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
-#if os.path.exists(DATA_DIR):
-    #print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
-#else:
-   # print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
-# ====================================================
-
-# 3. Define Output directories (Optional for cloud, but good for local)
-OUTPUT_DIR = os.path.join(BASE_DIR, 'Outputs')
+# Define Output directories
+OUTPUT_DIR = os.path.join(os.getcwd(), 'Outputs')
 CHARTS_DIR = os.path.join(OUTPUT_DIR, 'charts')
 
-# Create directories if they don't exist (prevent errors)
+# Create directories if they don't exist
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(CHARTS_DIR, exist_ok=True)
 
-print(f"📁 Base Directory: {BASE_DIR}")
-print(f"📁 Data Directory: {DATA_DIR}")
+print(f"\n📁 Configuration:")
+print(f"   Base Directory: {BASE_DIR}")
+print(f"   Data Directory: {DATA_DIR}")
+print(f"   Output Directory: {OUTPUT_DIR}")
 print()
 
-# ===== DATA LOADING FUNCTIONS =====
+# ===== DATA LOADING FUNCTIONS WITH MULTIPLE FILE PATHS =====
+
+def find_file(filename):
+    """
+    Find a file by checking multiple possible locations
+    Returns the full path if found, None otherwise
+    """
+    possible_locations = [
+        # 1. In the identified DATA_DIR
+        os.path.join(DATA_DIR, filename),
+        
+        # 2. In current working directory
+        os.path.join(os.getcwd(), filename),
+        
+        # 3. In Data folder from current working directory
+        os.path.join(os.getcwd(), 'Data', filename),
+        
+        # 4. In data folder (lowercase)
+        os.path.join(os.getcwd(), 'data', filename),
+        
+        # 5. In script directory
+        os.path.join(BASE_DIR, filename),
+        
+        # 6. In Data folder relative to script
+        os.path.join(BASE_DIR, 'Data', filename),
+        
+        # 7. One level up from script
+        os.path.join(os.path.dirname(BASE_DIR), 'Data', filename),
+        
+        # 8. Direct path (if filename is actually a path)
+        filename if os.path.isabs(filename) else None,
+    ]
+    
+    for path in possible_locations:
+        if path and os.path.isfile(path):
+            return path
+    
+    return None
+
 
 def load_plant_database():
-    """Load power plant database from Data folder or root"""
-    # Try Data folder first, then fallback to root if needed
-    file_path = os.path.join(DATA_DIR, 'German_Power_Plant_Database_2024_CORRECTED.csv')
-    if not os.path.exists(file_path):
-        file_path = 'German_Power_Plant_Database_2024_CORRECTED.csv'
+    """Load power plant database with robust encoding handling and multiple path fallbacks"""
+    print(f"📥 Loading Plant Database...")
+    
+    filename = 'German_Power_Plant_Database_2024_CORRECTED.csv'
+    file_path = find_file(filename)
+    
+    if file_path is None:
+        print(f"   ❌ ERROR: Could not find {filename} in any standard location!")
+        print(f"   🔍 Searched in:")
+        print(f"      - {DATA_DIR}")
+        print(f"      - {os.getcwd()}")
+        print(f"      - {os.path.join(os.getcwd(), 'Data')}")
+        print(f"      - {BASE_DIR}")
+        print(f"\n   📋 Files in current directory:")
+        try:
+            print(f"      {os.listdir(os.getcwd())}")
+        except Exception as e:
+            print(f"      Error listing: {e}")
         
+        if os.path.exists(DATA_DIR):
+            print(f"\n   📋 Files in DATA_DIR ({DATA_DIR}):")
+            try:
+                print(f"      {os.listdir(DATA_DIR)}")
+            except Exception as e:
+                print(f"      Error listing: {e}")
+        
+        return None
+    
+    print(f"   ✅ Found at: {file_path}")
+    
     try:
         encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
         plants_df = None
@@ -108,22 +192,42 @@ def load_plant_database():
         
         return plants_df
     
-    except FileNotFoundError:
-        print(f"   ❌ ERROR: Could not find file at: {file_path}")
-        print(f"   ⚠️  Check that the file exists in your GitHub 'Data' folder!")
-        return None
     except Exception as e:
         print(f"   ❌ ERROR: {str(e)}")
         return None
 
 
 def load_scenarios():
-    """Load market scenarios with robust encoding handling and path fix"""
-    print(f"📥 Loading Market Scenarios from: {DATA_DIR}...")
+    """Load market scenarios with robust encoding handling and multiple path fallbacks"""
+    print(f"📥 Loading Market Scenarios...")
     
-    # Use the robust DATA_DIR path
-    file_path = os.path.join(DATA_DIR, 'Market_Scenarios_2024.csv')
-    file_path = "Market_Scenarios_2024.csv"
+    filename = 'Market_Scenarios_2024.csv'
+    file_path = find_file(filename)
+    
+    if file_path is None:
+        print(f"   ❌ ERROR: Could not find {filename} in any standard location!")
+        print(f"   🔍 Searched in:")
+        print(f"      - {DATA_DIR}")
+        print(f"      - {os.getcwd()}")
+        print(f"      - {os.path.join(os.getcwd(), 'Data')}")
+        print(f"      - {BASE_DIR}")
+        print(f"\n   📋 Files in current directory:")
+        try:
+            print(f"      {os.listdir(os.getcwd())}")
+        except Exception as e:
+            print(f"      Error listing: {e}")
+        
+        if os.path.exists(DATA_DIR):
+            print(f"\n   📋 Files in DATA_DIR ({DATA_DIR}):")
+            try:
+                print(f"      {os.listdir(DATA_DIR)}")
+            except Exception as e:
+                print(f"      Error listing: {e}")
+        
+        return None
+    
+    print(f"   ✅ Found at: {file_path}")
+    
     try:
         encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
         scenarios_df = None
@@ -146,10 +250,6 @@ def load_scenarios():
         
         return scenarios_df
     
-    except FileNotFoundError:
-        print(f"   ❌ ERROR: Could not find file at: {file_path}")
-        print(f"   ⚠️  Check that the file exists in your GitHub 'Data' folder!")
-        return None
     except Exception as e:
         print(f"   ❌ ERROR: {str(e)}")
         return None
@@ -316,7 +416,7 @@ def run_merit_order_dispatch(plants_df, demand_mw, carbon_price, wind_avail_pct,
     renewable_generation = generation_by_technology.get('Wind', 0) + generation_by_technology.get('Solar', 0) + generation_by_technology.get('Hydro', 0)
     renewable_share_pct = (renewable_generation / demand_mw * 100) if demand_mw > 0 else 0
     
-    # ADVANCED METRICS (New additions inspired by Gemini)
+    # ADVANCED METRICS
     # Calculate potential renewable curtailment
     renewable_mask = plants_sorted['Technology'].isin(['Wind', 'Solar'])
     potential_renewable_mw = plants_sorted[renewable_mask]['Available_Capacity_MW'].sum()
@@ -343,7 +443,7 @@ def run_merit_order_dispatch(plants_df, demand_mw, carbon_price, wind_avail_pct,
         'unmet_demand_mw': unmet_demand,
         'total_emissions_tons': total_emissions,
         'avg_emissions_intensity_t_mwh': avg_emissions_intensity,
-        'carbon_intensity_g_kwh': avg_emissions_intensity * 1000,  # Convert to g/kWh
+        'carbon_intensity_g_kwh': avg_emissions_intensity * 1000,
         'total_generation_cost_eur': total_generation_cost,
         'total_revenue_eur': total_revenue,
         'total_profit_eur': total_profit,
@@ -560,44 +660,35 @@ def display_comparison_table(summary_df):
     
     print("\n" + "="*70)
 
-# ===== SECTION 4: VISUALIZATION FUNCTIONS =====
+# ===== VISUALIZATION FUNCTIONS =====
 
 def create_merit_order_curve(dispatch_df, demand_mw, market_price, scenario_name, save_path):
-    """
-    Create the classic merit order curve (supply curve staircase)
-    Shows how plants stack up by cost
-    """
-    # Prepare data for step chart
-    # We need cumulative capacity for x-axis
+    """Create the classic merit order curve (supply curve staircase)"""
     dispatch_df = dispatch_df.copy()
     dispatch_df['Cumulative_Start'] = dispatch_df['Available_Capacity_MW'].cumsum().shift(1).fillna(0)
     dispatch_df['Cumulative_End'] = dispatch_df['Available_Capacity_MW'].cumsum()
     
-    # Create figure
     plt.figure(figsize=(14, 8))
     
-    # Plot merit order curve as steps
     for idx, row in dispatch_df.iterrows():
         color = 'green' if row['Is_Dispatched'] else 'lightgray'
         
-        # Technology-based coloring for dispatched plants
         if row['Is_Dispatched']:
             if row['Technology'] == 'Wind':
-                color = '#3498db'  # Blue
+                color = '#3498db'
             elif row['Technology'] == 'Solar':
-                color = '#f39c12'  # Orange
+                color = '#f39c12'
             elif row['Technology'] == 'Hydro':
-                color = '#1abc9c'  # Teal
+                color = '#1abc9c'
             elif row['Technology'] == 'Gas':
-                color = '#e74c3c'  # Red
+                color = '#e74c3c'
             elif row['Technology'] == 'Coal':
-                color = '#34495e'  # Dark gray
+                color = '#34495e'
             elif row['Technology'] == 'Gas Peaker':
-                color = '#c0392b'  # Dark red
+                color = '#c0392b'
             elif row['Technology'] == 'Biomass':
-                color = '#27ae60'  # Green
+                color = '#27ae60'
         
-        # Draw horizontal line (the step)
         plt.hlines(
             y=row['SRMC_EUR_MWh'],
             xmin=row['Cumulative_Start'],
@@ -607,7 +698,6 @@ def create_merit_order_curve(dispatch_df, demand_mw, market_price, scenario_name
             alpha=0.8
         )
         
-        # Draw vertical line (connecting steps)
         if idx > 0:
             prev_price = dispatch_df.iloc[idx-1]['SRMC_EUR_MWh']
             plt.vlines(
@@ -619,21 +709,16 @@ def create_merit_order_curve(dispatch_df, demand_mw, market_price, scenario_name
                 alpha=0.8
             )
     
-    # Add demand line
     plt.axvline(x=demand_mw, color='red', linestyle='--', linewidth=2, label='Demand', alpha=0.7)
-    
-    # Add market price line
     plt.axhline(y=market_price, color='purple', linestyle='--', linewidth=2, 
                 label=f'Market Price: €{market_price:.2f}/MWh', alpha=0.7)
     
-    # Formatting
     plt.xlabel('Cumulative Capacity (MW)', fontsize=12, fontweight='bold')
     plt.ylabel('SRMC (€/MWh)', fontsize=12, fontweight='bold')
     plt.title(f'Merit Order Curve - {scenario_name}', fontsize=14, fontweight='bold', pad=20)
     plt.grid(True, alpha=0.3)
     plt.legend(loc='upper left', fontsize=10)
     
-    # Add text box with key metrics
     textstr = f'Demand: {demand_mw:,.0f} MW\nMarket Price: €{market_price:.2f}/MWh'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     plt.text(0.98, 0.97, textstr, transform=plt.gca().transAxes, fontsize=10,
@@ -647,16 +732,12 @@ def create_merit_order_curve(dispatch_df, demand_mw, market_price, scenario_name
 
 
 def create_generation_mix_pie(results, scenario_name, save_path):
-    """
-    Create pie chart showing generation mix by technology
-    """
+    """Create pie chart showing generation mix by technology"""
     gen_by_tech = results['generation_by_technology']
     
-    # Prepare data
     technologies = list(gen_by_tech.keys())
     generation = list(gen_by_tech.values())
     
-    # Define colors for each technology
     color_map = {
         'Wind': '#3498db',
         'Solar': '#f39c12',
@@ -668,10 +749,8 @@ def create_generation_mix_pie(results, scenario_name, save_path):
     }
     colors = [color_map.get(tech, '#95a5a6') for tech in technologies]
     
-    # Create figure
     plt.figure(figsize=(10, 8))
     
-    # Create pie chart
     wedges, texts, autotexts = plt.pie(
         generation,
         labels=technologies,
@@ -681,7 +760,6 @@ def create_generation_mix_pie(results, scenario_name, save_path):
         textprops={'fontsize': 11, 'fontweight': 'bold'}
     )
     
-    # Improve text visibility
     for autotext in autotexts:
         autotext.set_color('white')
         autotext.set_fontweight('bold')
@@ -689,7 +767,6 @@ def create_generation_mix_pie(results, scenario_name, save_path):
     plt.title(f'Generation Mix by Technology - {scenario_name}', 
               fontsize=14, fontweight='bold', pad=20)
     
-    # Add legend with generation values
     legend_labels = [f'{tech}: {gen:,.0f} MW' for tech, gen in zip(technologies, generation)]
     plt.legend(legend_labels, loc='center left', bbox_to_anchor=(1, 0, 0.5, 1), fontsize=10)
     
@@ -701,9 +778,7 @@ def create_generation_mix_pie(results, scenario_name, save_path):
 
 
 def create_scenario_comparison_chart(summary_df, save_path):
-    """
-    Create bar chart comparing key metrics across all scenarios
-    """
+    """Create bar chart comparing key metrics across all scenarios"""
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle('Scenario Comparison Dashboard', fontsize=16, fontweight='bold', y=0.995)
     
@@ -719,7 +794,6 @@ def create_scenario_comparison_chart(summary_df, save_path):
     ax1.set_title('Market Clearing Prices', fontsize=12, fontweight='bold')
     ax1.grid(True, alpha=0.3, axis='y')
     
-    # Add value labels on bars
     for bar in bars1:
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height,
@@ -735,7 +809,6 @@ def create_scenario_comparison_chart(summary_df, save_path):
     ax2.set_title('Carbon Emissions', fontsize=12, fontweight='bold')
     ax2.grid(True, alpha=0.3, axis='y')
     
-    # Add value labels
     for bar in bars2:
         height = bar.get_height()
         ax2.text(bar.get_x() + bar.get_width()/2., height,
@@ -753,13 +826,12 @@ def create_scenario_comparison_chart(summary_df, save_path):
     ax3.grid(True, alpha=0.3, axis='y')
     ax3.legend(fontsize=9)
     
-    # Add value labels
     for bar in bars3:
         height = bar.get_height()
         ax3.text(bar.get_x() + bar.get_width()/2., height,
                 f'{height:.1f}%', ha='center', va='bottom', fontsize=8)
     
-    # 4. Producer Surplus (Profit)
+    # 4. Producer Surplus
     ax4 = axes[1, 1]
     profit = summary_df['Producer_Surplus_EUR'].tolist()
     bars4 = ax4.bar(range(len(scenarios)), profit, color='#f39c12', alpha=0.8)
@@ -769,7 +841,6 @@ def create_scenario_comparison_chart(summary_df, save_path):
     ax4.set_title('Economic Profit (Producer Surplus)', fontsize=12, fontweight='bold')
     ax4.grid(True, alpha=0.3, axis='y')
     
-    # Add value labels
     for bar in bars4:
         height = bar.get_height()
         ax4.text(bar.get_x() + bar.get_width()/2., height,
@@ -783,18 +854,14 @@ def create_scenario_comparison_chart(summary_df, save_path):
 
 
 def create_carbon_price_sensitivity(summary_df, save_path):
-    """
-    Create scatter plot showing relationship between carbon price and market price
-    """
+    """Create scatter plot showing relationship between carbon price and market price"""
     plt.figure(figsize=(12, 8))
     
-    # Extract data
     carbon_prices = summary_df['Carbon_Price_EUR_ton'].tolist()
     market_prices = summary_df['Market_Price_EUR_MWh'].tolist()
     scenarios = summary_df['Scenario_Name'].tolist()
     renewable_share = summary_df['Renewable_Share_%'].tolist()
     
-    # Create scatter plot with color-coding by renewable share
     scatter = plt.scatter(carbon_prices, market_prices, 
                          c=renewable_share, 
                          s=200, 
@@ -803,7 +870,6 @@ def create_carbon_price_sensitivity(summary_df, save_path):
                          edgecolors='black',
                          linewidth=1.5)
     
-    # Add labels for each point
     for i, scenario in enumerate(scenarios):
         plt.annotate(scenario, 
                     (carbon_prices[i], market_prices[i]),
@@ -813,17 +879,14 @@ def create_carbon_price_sensitivity(summary_df, save_path):
                     fontsize=8,
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
     
-    # Add colorbar
     cbar = plt.colorbar(scatter)
     cbar.set_label('Renewable Share (%)', rotation=270, labelpad=20, fontsize=11, fontweight='bold')
     
-    # Add trend line
     if len(carbon_prices) > 1:
         z = np.polyfit(carbon_prices, market_prices, 1)
         p = np.poly1d(z)
         plt.plot(carbon_prices, p(carbon_prices), "r--", alpha=0.8, linewidth=2, label='Trend Line')
     
-    # Formatting
     plt.xlabel('Carbon Price (€/ton CO₂)', fontsize=12, fontweight='bold')
     plt.ylabel('Market Clearing Price (€/MWh)', fontsize=12, fontweight='bold')
     plt.title('Carbon Price vs Market Price Sensitivity Analysis', fontsize=14, fontweight='bold', pad=20)
@@ -838,23 +901,18 @@ def create_carbon_price_sensitivity(summary_df, save_path):
 
 
 def create_emissions_intensity_chart(summary_df, save_path):
-    """
-    Create bar chart showing emissions intensity with EU target comparison
-    """
+    """Create bar chart showing emissions intensity with EU target comparison"""
     plt.figure(figsize=(14, 8))
     
     scenarios = summary_df['Scenario_Name'].tolist()
     emissions_intensity = summary_df['Carbon_Intensity_g_kWh'].tolist()
     
-    # Create bars with color gradient based on intensity
     colors = ['#27ae60' if x < 100 else '#f39c12' if x < 300 else '#e74c3c' for x in emissions_intensity]
     
     bars = plt.bar(range(len(scenarios)), emissions_intensity, color=colors, alpha=0.8, edgecolor='black')
     
-    # Add EU 2030 target line (example: 100 g/kWh)
     plt.axhline(y=100, color='green', linestyle='--', linewidth=2, label='EU 2030 Target (~100 g/kWh)', alpha=0.7)
     
-    # Add value labels
     for bar in bars:
         height = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2., height,
@@ -866,7 +924,6 @@ def create_emissions_intensity_chart(summary_df, save_path):
     plt.grid(True, alpha=0.3, axis='y')
     plt.legend(fontsize=11, loc='upper left')
     
-    # Add color legend
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor='#27ae60', alpha=0.8, label='Below Target (<100 g/kWh)'),
@@ -883,14 +940,10 @@ def create_emissions_intensity_chart(summary_df, save_path):
 
 
 def create_technology_stack_chart(summary_df, save_path):
-    """
-    Create stacked area chart showing generation mix evolution across scenarios
-    """
-    # Extract generation data by technology
+    """Create stacked area chart showing generation mix evolution across scenarios"""
     tech_columns = [col for col in summary_df.columns if col.startswith('Gen_') and col.endswith('_MW')]
     technologies = [col.replace('Gen_', '').replace('_MW', '') for col in tech_columns]
     
-    # Prepare data matrix
     data_matrix = []
     for tech_col in tech_columns:
         if tech_col in summary_df.columns:
@@ -901,10 +954,8 @@ def create_technology_stack_chart(summary_df, save_path):
     scenarios = summary_df['Scenario_Name'].tolist()
     x_pos = range(len(scenarios))
     
-    # Create figure
     plt.figure(figsize=(16, 8))
     
-    # Color mapping
     color_map = {
         'Wind': '#3498db',
         'Solar': '#f39c12',
@@ -917,14 +968,12 @@ def create_technology_stack_chart(summary_df, save_path):
     
     colors = [color_map.get(tech, '#95a5a6') for tech in technologies]
     
-    # Create stacked bar chart
     bottom = np.zeros(len(scenarios))
     
     for i, (tech, data) in enumerate(zip(technologies, data_matrix)):
         plt.bar(x_pos, data, bottom=bottom, label=tech, color=colors[i], alpha=0.8, edgecolor='white')
         bottom += np.array(data)
     
-    # Formatting
     plt.xticks(x_pos, scenarios, rotation=45, ha='right', fontsize=10)
     plt.ylabel('Generation (MW)', fontsize=12, fontweight='bold')
     plt.title('Generation Mix Technology Stack Across Scenarios', fontsize=14, fontweight='bold', pad=20)
@@ -939,17 +988,13 @@ def create_technology_stack_chart(summary_df, save_path):
 
 
 def create_all_visualizations(all_results, summary_df, plants_df):
-    """
-    Master function to create all visualizations
-    """
+    """Master function to create all visualizations"""
     print("\n" + "="*70)
     print("🎨 CREATING VISUALIZATIONS")
     print("="*70)
     
-    # Create subdirectory for charts
     charts_dir = CHARTS_DIR
     
-    # 1. Merit Order Curves for selected scenarios
     print("\n📊 Creating Merit Order Curves...")
     selected_scenarios = ['Base_Load_Summer', 'Peak_Load_Winter', 'Extreme_Peak', 'High_Wind_Day']
     
@@ -965,7 +1010,6 @@ def create_all_visualizations(all_results, summary_df, plants_df):
                 save_path
             )
     
-    # 2. Generation Mix Pie Charts
     print("\n🥧 Creating Generation Mix Charts...")
     for scenario_name in selected_scenarios:
         result = next((r for r in all_results if r['scenario_name'] == scenario_name), None)
@@ -973,22 +1017,18 @@ def create_all_visualizations(all_results, summary_df, plants_df):
             save_path = os.path.join(charts_dir, f'generation_mix_{scenario_name}.png')
             create_generation_mix_pie(result, scenario_name, save_path)
     
-    # 3. Scenario Comparison Dashboard
     print("\n📊 Creating Scenario Comparison Dashboard...")
     save_path = os.path.join(charts_dir, 'scenario_comparison_dashboard.png')
     create_scenario_comparison_chart(summary_df, save_path)
     
-    # 4. Carbon Price Sensitivity
     print("\n💰 Creating Carbon Price Sensitivity Analysis...")
     save_path = os.path.join(charts_dir, 'carbon_price_sensitivity.png')
     create_carbon_price_sensitivity(summary_df, save_path)
     
-    # 5. Emissions Intensity
     print("\n🌍 Creating Emissions Intensity Chart...")
     save_path = os.path.join(charts_dir, 'emissions_intensity_comparison.png')
     create_emissions_intensity_chart(summary_df, save_path)
     
-    # 6. Technology Stack
     print("\n📊 Creating Technology Stack Chart...")
     save_path = os.path.join(charts_dir, 'technology_stack.png')
     create_technology_stack_chart(summary_df, save_path)
@@ -1056,16 +1096,13 @@ if __name__ == "__main__":
         print("\n📊 DELIVERABLES:")
         print(f"   📄 CSV Summary: {os.path.join(OUTPUT_DIR, 'scenario_summary.csv')}")
         print(f"   📊 Charts: {CHARTS_DIR}")
-        print("\n🚀 Next Step: Build Streamlit Web App (Section 5)")
+        print("\n🚀 Next Step: Build Streamlit Web App")
         print("="*70)
         
     else:
-
         print("❌ DATA LOADING FAILED!")
-
-
-
-
-
-
-
+        print("\n📋 Troubleshooting Steps:")
+        print("   1. Check that Data folder exists")
+        print("   2. Verify CSV files are in Data folder")
+        print("   3. Check file names match exactly")
+        print("   4. Ensure files are not corrupted")
