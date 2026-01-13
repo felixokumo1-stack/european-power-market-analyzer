@@ -7,6 +7,8 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Set backend before importing pyplot (required for cloud deployments)
 import matplotlib.pyplot as plt
 from datetime import datetime
 import warnings
