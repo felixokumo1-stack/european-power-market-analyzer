@@ -464,6 +464,25 @@ Data/
         
         st.header("📊 Generated Analysis Reports")
         
+        # Check charts directory status
+        charts_path = pma.CHARTS_DIR
+        
+        with st.expander("🔍 Charts Directory Status", expanded=False):
+            st.write(f"**Charts Directory:** `{charts_path}`")
+            st.write(f"**Exists:** {os.path.exists(charts_path)}")
+            if os.path.exists(charts_path):
+                try:
+                    files = os.listdir(charts_path)
+                    st.write(f"**Files found:** {len(files)}")
+                    if files:
+                        st.write("**File list:**")
+                        for f in files:
+                            st.write(f"  - {f}")
+                    else:
+                        st.warning("Directory exists but is empty")
+                except Exception as e:
+                    st.error(f"Error listing files: {e}")
+        
         # Generate charts if needed
         with st.spinner("🔄 Generating visualization reports..."):
             charts_generated = generate_all_charts(all_results, summary_df, plants)
@@ -471,7 +490,27 @@ Data/
         if not charts_generated:
             st.warning("⚠️ Some charts may not be available")
         
-        charts_path = pma.CHARTS_DIR
+        # Helper function to safely display images
+        def safe_display_image(image_path, caption, use_container_width=False):
+            """Safely display image with proper error handling"""
+            try:
+                if os.path.exists(image_path):
+                    # Try to open with PIL first to verify it's a valid image
+                    try:
+                        img = Image.open(image_path)
+                        st.image(img, caption=caption, use_container_width=use_container_width)
+                    except Exception as img_error:
+                        # If PIL fails, try direct path (sometimes works better in cloud)
+                        try:
+                            st.image(image_path, caption=caption, use_container_width=use_container_width)
+                        except Exception as e:
+                            st.error(f"Error displaying {caption}: {str(e)}")
+                            st.info(f"Image exists at: {image_path}")
+                else:
+                    st.warning(f"{caption} not available")
+                    st.caption(f"Expected at: {image_path}")
+            except Exception as e:
+                st.error(f"Unexpected error with {caption}: {str(e)}")
 
         # Overview section
         st.subheader("🌍 Global Market Overview")
@@ -479,29 +518,17 @@ Data/
         
         with col1:
             chart_path = os.path.join(charts_path, 'scenario_comparison_dashboard.png')
-            if os.path.exists(chart_path):
-                st.image(chart_path, caption="Scenario Comparison Dashboard")
-            else:
-                st.warning("Chart not available")
+            safe_display_image(chart_path, "Scenario Comparison Dashboard")
             
             chart_path = os.path.join(charts_path, 'carbon_price_sensitivity.png')
-            if os.path.exists(chart_path):
-                st.image(chart_path, caption="Carbon Price Sensitivity")
-            else:
-                st.warning("Chart not available")
+            safe_display_image(chart_path, "Carbon Price Sensitivity")
         
         with col2:
             chart_path = os.path.join(charts_path, 'technology_stack.png')
-            if os.path.exists(chart_path):
-                st.image(chart_path, caption="Technology Stack Evolution")
-            else:
-                st.warning("Chart not available")
+            safe_display_image(chart_path, "Technology Stack Evolution")
             
             chart_path = os.path.join(charts_path, 'emissions_intensity_comparison.png')
-            if os.path.exists(chart_path):
-                st.image(chart_path, caption="Emissions Intensity vs EU Targets")
-            else:
-                st.warning("Chart not available")
+            safe_display_image(chart_path, "Emissions Intensity vs EU Targets")
         
         st.markdown("---")
         
@@ -517,17 +544,11 @@ Data/
         
         with col_a:
             merit_path = os.path.join(charts_path, f'merit_order_{selected_view}.png')
-            if os.path.exists(merit_path):
-                st.image(merit_path, use_container_width=True, caption=f"Merit Order - {selected_view}")
-            else:
-                st.warning(f"Merit order chart for {selected_view} not available")
+            safe_display_image(merit_path, f"Merit Order - {selected_view}", use_container_width=True)
         
         with col_b:
             mix_path = os.path.join(charts_path, f'generation_mix_{selected_view}.png')
-            if os.path.exists(mix_path):
-                st.image(mix_path, use_container_width=True, caption=f"Generation Mix - {selected_view}")
-            else:
-                st.warning(f"Generation mix chart for {selected_view} not available")
+            safe_display_image(mix_path, f"Generation Mix - {selected_view}", use_container_width=True)
     
     # ===== MODE 3: DATA EXPLORER =====
     
