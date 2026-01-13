@@ -12,6 +12,22 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
+# 1. DEFINE PATHS FIRST
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Note: Using capital 'Data' to match your GitHub folder name exactly
+DATA_DIR = os.path.join(BASE_DIR, 'Data')
+
+# 2. NOW RUN THE DEBUGGER (Safe because DATA_DIR is now defined)
+print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
+print(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
+
+if os.path.exists(DATA_DIR):
+    print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
+else:
+    print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
+
+# Rest of your configuration prints...
+
 # Set display options
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
@@ -1046,6 +1062,7 @@ if __name__ == "__main__":
     else:
 
         print("❌ DATA LOADING FAILED!")
+
 
 
 
