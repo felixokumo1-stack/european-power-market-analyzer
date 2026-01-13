@@ -495,16 +495,22 @@ Data/
             """Safely display image with proper error handling"""
             try:
                 if os.path.exists(image_path):
-                    # Try to open with PIL first to verify it's a valid image
+                    # Method 1: Try direct path first (most compatible)
                     try:
-                        img = Image.open(image_path)
-                        st.image(img, caption=caption, use_container_width=use_container_width)
-                    except Exception as img_error:
-                        # If PIL fails, try direct path (sometimes works better in cloud)
+                        if use_container_width:
+                            st.image(image_path, caption=caption, use_column_width=True)
+                        else:
+                            st.image(image_path, caption=caption)
+                    except Exception as direct_error:
+                        # Method 2: Try with PIL if direct path fails
                         try:
-                            st.image(image_path, caption=caption, use_container_width=use_container_width)
-                        except Exception as e:
-                            st.error(f"Error displaying {caption}: {str(e)}")
+                            img = Image.open(image_path)
+                            if use_container_width:
+                                st.image(img, caption=caption, use_column_width=True)
+                            else:
+                                st.image(img, caption=caption)
+                        except Exception as pil_error:
+                            st.error(f"Error displaying {caption}: {str(pil_error)}")
                             st.info(f"Image exists at: {image_path}")
                 else:
                     st.warning(f"{caption} not available")
