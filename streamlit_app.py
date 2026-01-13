@@ -1,6 +1,7 @@
 # =====================================================================
 # EUROPEAN POWER MARKET ANALYZER - STREAMLIT WEB APP (HYBRID VERSION)
 # Combines: Interactive Plotly + Static Matplotlib + Data Tables
+# UPDATED: Multiple fallback paths for Streamlit Cloud deployment
 # =====================================================================
 
 import streamlit as st
@@ -9,10 +10,15 @@ import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 import os
+import sys
 from PIL import Image
 
 # Import analysis engine
-import power_market_analyzer as pma
+try:
+    import power_market_analyzer as pma
+except ImportError:
+    st.error("❌ Could not import power_market_analyzer module")
+    st.stop()
 
 # ===== PAGE CONFIGURATION =====
 
@@ -25,28 +31,6 @@ st.set_page_config(
 
 # ===== CUSTOM CSS =====
 
-st.markdown("""
-    <style>
-    .main {
-        padding: 0rem 1rem;
-    }
-    .stMetric {
-        background-color: #f0f2f6;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    h1 {
-        color: #1f77b4;
-        font-family: 'Arial Black', sans-serif;
-    }
-    h2 {
-        color: #2c3e50;
-        border-bottom: 2px solid #3498db;
-        padding-bottom: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 st.markdown("""
     <style>
     .main {
@@ -85,26 +69,101 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ===== CACHED DATA LOADING =====
+# ===== DIAGNOSTIC SECTION (OPTIONAL - CAN BE TOGGLED) =====
+
+def show_diagnostic_info():
+    """Show diagnostic information for troubleshooting"""
+    with st.expander("🔍 Diagnostic Information (Click to expand)", expanded=False):
+        st.subheader("System Information")
+        st.write(f"**Python Version:** {sys.version}")
+        st.write(f"**Current Working Directory:** `{os.getcwd()}`")
+        
+        st.subheader("File System")
+        try:
+            root_files = os.listdir('.')
+            st.write(f"**Files in root directory:** {root_files}")
+            
+            # Check for Data folder
+            if os.path.exists('Data'):
+                st.success("✅ Data folder found!")
+                data_files = os.listdir('Data')
+                st.write(f"**Files in Data folder:** {data_files}")
+            else:
+                st.warning("⚠️ Data folder not found in root directory")
+                
+                # Check alternative locations
+                alt_locations = ['data', './Data', './data', '../Data']
+                for loc in alt_locations:
+                    if os.path.exists(loc):
+                        st.info(f"Found Data at alternative location: {loc}")
+                        st.write(f"Files: {os.listdir(loc)}")
+        except Exception as e:
+            st.error(f"Error accessing file system: {e}")
+        
+        st.subheader("Module Paths")
+        if 'pma' in dir():
+            st.write(f"**power_market_analyzer location:** {pma.__file__ if hasattr(pma, '__file__') else 'N/A'}")
+            st.write(f"**DATA_DIR configured as:** {pma.DATA_DIR if hasattr(pma, 'DATA_DIR') else 'N/A'}")
+
+# ===== CACHED DATA LOADING WITH ERROR HANDLING =====
 
 @st.cache_data
 def load_data():
-    """Load plant and scenario data"""
-    plants = pma.load_plant_database()
-    scenarios = pma.load_scenarios()
-    return plants, scenarios
+    """Load plant and scenario data with comprehensive error handling"""
+    try:
+        plants = pma.load_plant_database()
+        scenarios = pma.load_scenarios()
+        
+        # Validate data
+        if plants is None:
+            st.error("❌ Plant database failed to load")
+            st.warning("**Possible causes:**")
+            st.write("1. Data folder is missing")
+            st.write("2. CSV file 'German_Power_Plant_Database_2024_CORRECTED.csv' not found")
+            st.write("3. File encoding issue")
+            st.write("\n**Please check the diagnostic information below:**")
+            show_diagnostic_info()
+            return None, None
+        
+        if scenarios is None:
+            st.error("❌ Scenarios database failed to load")
+            st.warning("**Possible causes:**")
+            st.write("1. Data folder is missing")
+            st.write("2. CSV file 'Market_Scenarios_2024.csv' not found")
+            st.write("3. File encoding issue")
+            st.write("\n**Please check the diagnostic information below:**")
+            show_diagnostic_info()
+            return None, None
+        
+        return plants, scenarios
+        
+    except Exception as e:
+        st.error(f"❌ Unexpected error during data loading: {str(e)}")
+        st.write("**Error details:**")
+        st.code(str(e))
+        show_diagnostic_info()
+        return None, None
 
 @st.cache_data
-def run_all_scenarios_cached(plants_df, scenarios_df):
+def run_all_scenarios_cached(_plants_df, _scenarios_df):
     """Run all scenarios and cache results"""
-    all_results = pma.run_all_scenarios(plants_df, scenarios_df)
-    summary_df = pma.create_summary_dataframe(all_results)
-    return all_results, summary_df
+    try:
+        all_results = pma.run_all_scenarios(_plants_df, _scenarios_df)
+        summary_df = pma.create_summary_dataframe(all_results)
+        return all_results, summary_df
+    except Exception as e:
+        st.error(f"Error running scenarios: {str(e)}")
+        return None, None
 
 @st.cache_data
-def generate_all_charts(all_results, summary_df, plants_df):
+def generate_all_charts(_all_results, _summary_df, _plants_df):
     """Generate matplotlib charts once"""
-    pma.create_all_visualizations(all_results, summary_df, plants_df)
+    try:
+        pma.create_all_visualizations(_all_results, _summary_df, _plants_df)
+        return True
+    except Exception as e:
+        st.error(f"Error generating charts: {str(e)}")
+        return False
 
 # ===== INTERACTIVE PLOTLY CHARTS =====
 
@@ -195,94 +254,99 @@ def create_interactive_generation_mix(results, scenario_name):
     
     return fig
 
-# ===== MAIN APP =====
+# ===== ABOUT SECTION =====
+
 def show_about_section():
     """Display project information and methodology"""
     with st.expander("ℹ️ About This Dashboard", expanded=False):
-      # --- ABOUT SECTION START ---
-     st.markdown("## 📖 About the Project")
+        st.markdown("## 📖 About the Project")
 
-# 1. Project Overview
-     st.markdown("### 🎯 Project Overview")
-     st.write("""
+        # 1. Project Overview
+        st.markdown("### 🎯 Project Overview")
+        st.write("""
 This platform provides a high-fidelity simulation of **European Power Market Dynamics** through a 
 **Bottom-Up Merit Order Dispatch** model. By simulating the competition between various generation 
 technologies, the tool quantifies how fuel prices, carbon taxes, and renewable penetration drive 
 electricity price formation in a zonal market.
 """)
 
-     st.markdown("---")
+        st.markdown("---")
 
-# 2. Methodology
-     st.markdown("### 📊 Economic Dispatch Methodology")
-     st.write("The model utilizes the **Merit Order Principle**, ranking plants by their **Short-Run Marginal Cost (SRMC)**:")
+        # 2. Methodology
+        st.markdown("### 📊 Economic Dispatch Methodology")
+        st.write("The model utilizes the **Merit Order Principle**, ranking plants by their **Short-Run Marginal Cost (SRMC)**:")
 
-# Professional Formula using LaTeX
-     st.latex(r"SRMC\ [€/MWh] = \frac{Fuel\ Price}{Efficiency} + (Carbon\ Price \times Emission\ Factor) + VOM")
+        # Professional Formula using LaTeX
+        st.latex(r"SRMC\ [€/MWh] = \frac{Fuel\ Price}{Efficiency} + (Carbon\ Price \times Emission\ Factor) + VOM")
 
-     st.write("""
+        st.write("""
 **Key Principles:**
 * **Optimal Dispatch:** The system schedules the cheapest available units first to minimize total system costs.
 * **Market Clearing:** The most expensive plant required to satisfy the demand acts as the **Marginal Plant**, setting the clearing price for the entire market.
 """)
 
-     st.markdown("---")
+        st.markdown("---")
 
-# 3. Key Features
-     st.markdown("### 🔑 Key Features")
-     st.markdown("""
+        # 3. Key Features
+        st.markdown("### 🔑 Key Features")
+        st.markdown("""
 - **Granular Asset Database:** 40 modeled power plants across 7 technologies (Solar, Wind, Gas, Coal, Hydro, Biomass, Lignite).
 - **Dynamic Scenario Engine:** 10 pre-configured scenarios simulating winter peaks, high-renewable summer days, and supply shocks.
 - **Environmental Tracking:** Real-time calculation of total CO₂ emissions and grid carbon intensity (g/kWh).
 - **Interactive Analytics:** Advanced Plotly-based visualizations for deep-dive sensitivity analysis.
 """)
 
-     st.markdown("---")
+        st.markdown("---")
 
-# 4. Data Attribution
-     st.markdown("### 📚 Data Attribution & Sources")
-     st.caption("📍 **Data Scope:** This analysis is based on 2024 German Power Market fundamentals, with plant-level data and load profiles synthesized from Fraunhofer ISE, SMARD.de, and ENTSO-E.")
-     st.markdown("""
+        # 4. Data Attribution
+        st.markdown("### 📚 Data Attribution & Sources")
+        st.caption("📍 **Data Scope:** This analysis is based on 2024 German Power Market fundamentals, with plant-level data and load profiles synthesized from Fraunhofer ISE, SMARD.de, and ENTSO-E.")
+        st.markdown("""
 - **Generation Capacities:** [Fraunhofer ISE Energy-Charts](https://www.energy-charts.info)
 - **Market Load & Demand:** [SMARD.de / Bundesnetzagentur](https://www.smard.de)
 - **Commodity Pricing:** [EEX Group](https://www.eex.com)
 """)
 
-     st.markdown("---")
+        st.markdown("---")
 
-# 5. Author Information
-     st.markdown("### 👨‍💻 Developed By")
-     st.write("**Felix Okumo**")
-     st.write("*MSc Mechanical Engineering Candidate | Sustainable Energy Systems*")
-     st.write("Ruhr University Bochum (RUB), Germany")
+        # 5. Author Information
+        st.markdown("### 👨‍💻 Developed By")
+        st.write("**Felix Okumo**")
+        st.write("*MSc Mechanical Engineering Candidate | Sustainable Energy Systems*")
+        st.write("Ruhr University Bochum (RUB), Germany")
 
-# Arrangement of Contact Links in one line
-     st.markdown("""
+        # Arrangement of Contact Links in one line
+        st.markdown("""
 📧 [felix.1.okumo@gmail.com](mailto:felix.1.okumo@gmail.com) | 
 💼 [LinkedIn](https://www.linkedin.com/in/felix-okumo) | 
 📂 [GitHub](https://github.com/felixokumo1-stack)
 """)
 
-     st.markdown("---")
+        st.markdown("---")
 
-# 6. Tech Stack
-     st.markdown("### 🛠️ Technical Architecture")
-     st.code("Python | Pandas | NumPy | Matplotlib | Plotly | Streamlit", language=None)
+        # 6. Tech Stack
+        st.markdown("### 🛠️ Technical Architecture")
+        st.code("Python | Pandas | NumPy | Matplotlib | Plotly | Streamlit", language=None)
 
-     # Add this to your 'About' section in streamlit_app.py
-with open("Excel/European_Power_Market_Model.xlsx", "rb") as file:
-    st.download_button(
-        label="📊 Download Original Excel Prototype",
-        data=file,
-        file_name="European_Power_Market_Model.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        # Excel download button
+        excel_path = "Excel/European_Power_Market_Model.xlsx"
+        if os.path.exists(excel_path):
+            with open(excel_path, "rb") as file:
+                st.download_button(
+                    label="📊 Download Original Excel Prototype",
+                    data=file,
+                    file_name="European_Power_Market_Model.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        else:
+            st.info("📊 Excel prototype not available in this deployment")
 
-# --- ABOUT SECTION END ---
+# ===== MAIN APP =====
+
 def main():
     
     # Header
-    st.title("⚡ European Power Market Analyzer ⚡ ")
+    st.title("⚡ European Power Market Analyzer ⚡")
     st.markdown("### 🇩🇪 German Zonal Dispatch Simulator")
     st.markdown("### Interactive Merit Order Dispatch & Scenario Analysis Dashboard")
     st.caption("📍 **Data Scope:** This analysis is based on 2024 German Power Market fundamentals, with plant-level data and load profiles synthesized from Fraunhofer ISE, SMARD.de, and ENTSO-E.")
@@ -293,13 +357,31 @@ def main():
     
     st.markdown("---")
     
-    # Load data
-    with st.spinner("Loading data..."):
+    # Load data with error handling
+    with st.spinner("🔄 Loading market data..."):
         plants, scenarios = load_data()
     
+    # Check if data loaded successfully
     if plants is None or scenarios is None:
-        st.error("❌ Failed to load data. Check your Data folder.")
-        return
+        st.error("❌ Failed to load data. Please check your Data folder configuration.")
+        st.warning("**Quick Fix:**")
+        st.write("1. Ensure you have a 'Data' folder in your repository root")
+        st.write("2. The Data folder should contain:")
+        st.code("""
+Data/
+  ├── German_Power_Plant_Database_2024_CORRECTED.csv
+  └── Market_Scenarios_2024.csv
+        """)
+        st.write("3. Commit and push the Data folder to GitHub")
+        st.write("4. Redeploy or reboot your Streamlit app")
+        
+        # Show diagnostic info
+        show_diagnostic_info()
+        
+        st.stop()
+    
+    # Success message
+    st.success("✅ Data loaded successfully!")
     
     # Sidebar
     st.sidebar.header("🎛️ Control Panel")
@@ -312,8 +394,12 @@ def main():
     )
     
     # Run analysis once
-    with st.spinner("Running market dispatch scenarios..."):
+    with st.spinner("🔄 Running market dispatch scenarios..."):
         all_results, summary_df = run_all_scenarios_cached(plants, scenarios)
+    
+    if all_results is None or summary_df is None:
+        st.error("❌ Failed to run scenarios")
+        st.stop()
     
     # ===== MODE 1: INTERACTIVE ANALYSIS =====
     
@@ -379,8 +465,11 @@ def main():
         st.header("📊 Generated Analysis Reports")
         
         # Generate charts if needed
-        with st.spinner("Generating visualization reports..."):
-            generate_all_charts(all_results, summary_df, plants)
+        with st.spinner("🔄 Generating visualization reports..."):
+            charts_generated = generate_all_charts(all_results, summary_df, plants)
+        
+        if not charts_generated:
+            st.warning("⚠️ Some charts may not be available")
         
         charts_path = pma.CHARTS_DIR
 
@@ -389,22 +478,30 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if os.path.exists(os.path.join(charts_path, 'scenario_comparison_dashboard.png')):
-                st.image(os.path.join(charts_path, 'scenario_comparison_dashboard.png'),
-                        caption="Scenario Comparison Dashboard")
+            chart_path = os.path.join(charts_path, 'scenario_comparison_dashboard.png')
+            if os.path.exists(chart_path):
+                st.image(chart_path, caption="Scenario Comparison Dashboard")
+            else:
+                st.warning("Chart not available")
             
-            if os.path.exists(os.path.join(charts_path, 'carbon_price_sensitivity.png')):
-                st.image(os.path.join(charts_path, 'carbon_price_sensitivity.png'),
-                        caption="Carbon Price Sensitivity")
+            chart_path = os.path.join(charts_path, 'carbon_price_sensitivity.png')
+            if os.path.exists(chart_path):
+                st.image(chart_path, caption="Carbon Price Sensitivity")
+            else:
+                st.warning("Chart not available")
         
         with col2:
-            if os.path.exists(os.path.join(charts_path, 'technology_stack.png')):
-                st.image(os.path.join(charts_path, 'technology_stack.png'),
-                        caption="Technology Stack Evolution")
+            chart_path = os.path.join(charts_path, 'technology_stack.png')
+            if os.path.exists(chart_path):
+                st.image(chart_path, caption="Technology Stack Evolution")
+            else:
+                st.warning("Chart not available")
             
-            if os.path.exists(os.path.join(charts_path, 'emissions_intensity_comparison.png')):
-                st.image(os.path.join(charts_path, 'emissions_intensity_comparison.png'),
-                        caption="Emissions Intensity vs EU Targets")
+            chart_path = os.path.join(charts_path, 'emissions_intensity_comparison.png')
+            if os.path.exists(chart_path):
+                st.image(chart_path, caption="Emissions Intensity vs EU Targets")
+            else:
+                st.warning("Chart not available")
         
         st.markdown("---")
         
@@ -422,11 +519,15 @@ def main():
             merit_path = os.path.join(charts_path, f'merit_order_{selected_view}.png')
             if os.path.exists(merit_path):
                 st.image(merit_path, use_container_width=True, caption=f"Merit Order - {selected_view}")
+            else:
+                st.warning(f"Merit order chart for {selected_view} not available")
         
         with col_b:
             mix_path = os.path.join(charts_path, f'generation_mix_{selected_view}.png')
             if os.path.exists(mix_path):
                 st.image(mix_path, use_container_width=True, caption=f"Generation Mix - {selected_view}")
+            else:
+                st.warning(f"Generation mix chart for {selected_view} not available")
     
     # ===== MODE 3: DATA EXPLORER =====
     
