@@ -83,7 +83,7 @@ def load_plant_database():
     print(f"📥 Loading Plant Database from: {DATA_DIR}...")
     
     # Use the robust DATA_DIR path
-    #file_path = os.path.join(DATA_DIR, 'German_Power_Plant_Database_2024_CORRECTED.csv')
+    file_path = os.path.join(DATA_DIR, 'German_Power_Plant_Database_2024_CORRECTED.csv')
     file_path = "German_Power_Plant_Database_2024_CORRECTED.csv"
     try:
         encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
@@ -122,7 +122,7 @@ def load_scenarios():
     print(f"📥 Loading Market Scenarios from: {DATA_DIR}...")
     
     # Use the robust DATA_DIR path
-   # file_path = os.path.join(DATA_DIR, 'Market_Scenarios_2024.csv')
+    file_path = os.path.join(DATA_DIR, 'Market_Scenarios_2024.csv')
     file_path = "Market_Scenarios_2024.csv"
     try:
         encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
@@ -1062,6 +1062,7 @@ if __name__ == "__main__":
     else:
 
         print("❌ DATA LOADING FAILED!")
+
 
 
 
