@@ -79,12 +79,12 @@ print()
 # ===== DATA LOADING FUNCTIONS =====
 
 def load_plant_database():
-    """Load power plant database with robust encoding handling and path fix"""
-    print(f"📥 Loading Plant Database from: {DATA_DIR}...")
-    
-    # Use the robust DATA_DIR path
+    """Load power plant database from Data folder or root"""
+    # Try Data folder first, then fallback to root if needed
     file_path = os.path.join(DATA_DIR, 'German_Power_Plant_Database_2024_CORRECTED.csv')
-    file_path = "German_Power_Plant_Database_2024_CORRECTED.csv"
+    if not os.path.exists(file_path):
+        file_path = 'German_Power_Plant_Database_2024_CORRECTED.csv'
+        
     try:
         encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
         plants_df = None
@@ -1062,6 +1062,7 @@ if __name__ == "__main__":
     else:
 
         print("❌ DATA LOADING FAILED!")
+
 
 
 
