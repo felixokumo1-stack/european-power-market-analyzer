@@ -346,7 +346,7 @@ electricity price formation in a zonal market.
 def main():
     
     # Header
-    st.title("⚡ European Power Market Analyzer ⚡")
+    st.header("⚡ European Power Market Analyzer ⚡")
     st.markdown("### 🇩🇪 German Zonal Dispatch Simulator")
     st.markdown("### Interactive Merit Order Dispatch & Scenario Analysis Dashboard")
     st.caption("📍 **Data Scope:** This analysis is based on 2024 German Power Market fundamentals, with plant-level data and load profiles synthesized from Fraunhofer ISE, SMARD.de, and ENTSO-E.")
@@ -644,3 +644,4 @@ Data/
 
 if __name__ == "__main__":
     main()
+
