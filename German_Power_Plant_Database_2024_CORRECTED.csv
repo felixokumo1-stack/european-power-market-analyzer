@@ -1,0 +1,41 @@
+Plant_ID,Plant_Name,Plant_Type,Technology,Capacity_MW,Fuel_Cost_EUR_MWh,CO2_Emissions_t_MWh,Fixed_OM_EUR_MW_yr,Variable_OM_EUR_MWh,Availability_Percent
+1,Lignite_Neurath,Lignite,Coal,4400,5,1.1,45000,4,85
+2,Lignite_Niederaussem,Lignite,Coal,3864,5,1.12,45000,4,83
+3,Lignite_Jaenschwalde,Lignite,Coal,3000,5,1.09,45000,4,84
+4,Lignite_BoxbergII,Lignite,Coal,2575,5,1.11,45000,4,86
+5,HardCoal_Moorburg,Hard Coal,Coal,4800,38,0.9,40000,3.5,88
+6,HardCoal_Datteln,Hard Coal,Coal,3200,40,0.92,40000,3.5,86
+7,HardCoal_Walsum,Hard Coal,Coal,3500,39,0.91,40000,3.5,87
+8,HardCoal_Wilhelmshaven,Hard Coal,Coal,3200,37,0.89,40000,3.5,89
+9,HardCoal_Mehrum,Hard Coal,Coal,2100,38,0.9,40000,3.5,85
+10,HardCoal_Heyden,Hard Coal,Coal,1200,39,0.91,40000,3.5,86
+11,CCGT_Irsching,CCGT,Gas,3600,70,0.4,25000,2.5,90
+12,CCGT_Fortuna,CCGT,Gas,2300,72,0.41,25000,2.5,88
+13,CCGT_Leipzig,CCGT,Gas,1900,68,0.39,25000,2.5,91
+14,CCGT_GuD_Lausward,CCGT,Gas,1700,71,0.4,25000,2.5,89
+15,CCGT_Herne,CCGT,Gas,1520,69,0.39,25000,2.5,90
+16,CCGT_Knapsack,CCGT,Gas,1200,70,0.4,25000,2.5,89
+17,CCGT_Hamm,CCGT,Gas,800,73,0.41,25000,2.5,87
+18,OCGT_Peak_North,OCGT,Gas Peaker,1200,95,0.55,15000,3,92
+19,OCGT_Peak_South,OCGT,Gas Peaker,1000,98,0.57,15000,3,90
+20,OCGT_Reserve_West,OCGT,Gas Peaker,800,96,0.56,15000,3,91
+21,OCGT_Grid_Stabilization,OCGT,Gas Peaker,1500,100,0.58,15000,3,93
+22,OnshoreWind_North,Onshore Wind,Wind,18750,0,0,35000,0.5,35
+23,OnshoreWind_Central,Onshore Wind,Wind,15625,0,0,35000,0.5,33
+24,OnshoreWind_South,Onshore Wind,Wind,12500,0,0,35000,0.5,32
+25,OnshoreWind_East,Onshore Wind,Wind,14375,0,0,35000,0.5,34
+26,OffshoreWind_NorthSea1,Offshore Wind,Wind,2592,0,0,75000,1,45
+27,OffshoreWind_NorthSea2,Offshore Wind,Wind,2268,0,0,75000,1,43
+28,OffshoreWind_Baltic1,Offshore Wind,Wind,1944,0,0,75000,1,44
+29,OffshoreWind_Baltic2,Offshore Wind,Wind,1728,0,0,75000,1,42
+30,Solar_South_Bavaria,Solar PV,Solar,22400,0,0,25000,0.2,18
+31,Solar_Southwest,Solar PV,Solar,20000,0,0,25000,0.2,17
+32,Solar_Central,Solar PV,Solar,17600,0,0,25000,0.2,16
+33,Solar_East,Solar PV,Solar,16800,0,0,25000,0.2,17
+34,Solar_North,Solar PV,Solar,15200,0,0,25000,0.2,15
+35,Hydro_RunOfRiver_Rhine,Hydro,Hydro,2800,5,0,20000,0.5,50
+36,Hydro_RunOfRiver_Danube,Hydro,Hydro,2200,6,0,20000,0.5,48
+37,Hydro_PumpedStorage_Alps,Hydro,Hydro,1800,4,0,20000,0.5,52
+38,Biomass_Agricultural,Biomass,Biomass,3200,50,0.1,60000,4.5,80
+39,Biomass_Forest,Biomass,Biomass,2800,52,0.12,60000,4.5,78
+40,Biomass_Waste,Biomass,Biomass,2400,48,0.08,60000,4.5,82
