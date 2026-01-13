@@ -27,10 +27,26 @@ print()
 
 # 1. Get the directory where THIS script is running
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ===== DEBUGGING TOOL: DELETE THIS AFTER FIXING =====
+print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
+print(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
+if os.path.exists(DATA_DIR):
+    print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
+else:
+    print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
+# ====================================================
 
 # 2. Define Data path relative to this script
 # (Since the script and Data folder are now side-by-side in the root)
 DATA_DIR = os.path.join(BASE_DIR, 'Data')
+# ===== DEBUGGING TOOL: DELETE THIS AFTER FIXING =====
+print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
+print(f"🔍 DEBUG: Contents of root: {os.listdir('.')}")
+if os.path.exists(DATA_DIR):
+    print(f"🔍 DEBUG: Contents of Data folder: {os.listdir(DATA_DIR)}")
+else:
+    print(f"🔍 DEBUG: DATA_DIR DOES NOT EXIST: {DATA_DIR}")
+# ====================================================
 
 # 3. Define Output directories (Optional for cloud, but good for local)
 OUTPUT_DIR = os.path.join(BASE_DIR, 'Outputs')
@@ -1030,3 +1046,4 @@ if __name__ == "__main__":
     else:
 
         print("❌ DATA LOADING FAILED!")
+
