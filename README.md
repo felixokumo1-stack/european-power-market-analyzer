@@ -1,7 +1,7 @@
 \# ⚡ European Power Market Analyzer (German Zonal Focus)
 
 \[\![Streamlit
-App\](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)\](YOUR_DEPLOYED_APP_URL_HERE)
+App\](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)\](https://felix-okumo-european-power-market-analyzer.streamlit.app/)
 \[\![Python
 3.11+\](https://img.shields.io/badge/python-3.11+-blue.svg)\](https://www.python.org/downloads/)
 \[\![License:
@@ -65,8 +65,8 @@ documentation
 To run the simulator locally, follow these steps:
 
 Clone the repository: git clone
-\[https://github.com/felixokumo1-stack/your-repo-name.git\](https://github.com/felixokumo1-stack/your-repo-name.git)
-cd your-repo-name
+\[https://github.com/felixokumo1-stack/european-power-market-analyzer.git\](https://github.com/felixokumo1-stack/european-power-market-analyzer.git)
+cd european-power-market-analyzer
 
 Install dependencies: pip install -r requirements.txt
 
