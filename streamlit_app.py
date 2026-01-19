@@ -74,7 +74,12 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
+st.title("⚡ European Power Market Analyzer ⚡")
 
+# ===== LOAD DATA =====
+@st.cache_data
+def load_all_data():
+    
 # ===== DIAGNOSTIC SECTION (OPTIONAL - CAN BE TOGGLED) =====
 
 def show_diagnostic_info():
@@ -714,3 +719,4 @@ Data/
 
 if __name__ == "__main__":
     main()
+
