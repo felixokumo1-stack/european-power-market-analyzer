@@ -16,9 +16,15 @@ from PIL import Image
 # Import analysis engine
 try:
     import power_market_analyzer as pma
+    from power_market_analyzer import (
+    calculate_switching_price,
+    interpret_switching_price,
+    prepare_bi_export
+)
 except ImportError:
     st.error("❌ Could not import power_market_analyzer module")
     st.stop()
+
 
 # ===== PAGE CONFIGURATION =====
 
@@ -113,7 +119,7 @@ def load_data():
     try:
         plants = pma.load_plant_database()
         scenarios = pma.load_scenarios()
-        
+       
         # Validate data
         if plants is None:
             st.error("❌ Plant database failed to load")
@@ -164,7 +170,17 @@ def generate_all_charts(_all_results, _summary_df, _plants_df):
     except Exception as e:
         st.error(f"Error generating charts: {str(e)}")
         return False
-
+    
+@st.cache_data
+def calculate_switching_price_cached(_plants_df):
+    """Calculate switching price once and cache it"""
+    try:
+        switching_data = calculate_switching_price(_plants_df)
+        return switching_data
+    except Exception as e:
+        st.error(f"Error calculating switching price: {e}")
+        return None
+    
 # ===== INTERACTIVE PLOTLY CHARTS =====
 
 def create_interactive_merit_order(dispatch_df, demand_mw, market_price, scenario_name):
@@ -346,7 +362,7 @@ electricity price formation in a zonal market.
 def main():
     
     # Header
-    st.header("⚡ European Power Market Analyzer ⚡")
+    st.title("⚡ European Power Market Analyzer ⚡")
     st.markdown("### 🇩🇪 German Zonal Dispatch Simulator")
     st.markdown("### Interactive Merit Order Dispatch & Scenario Analysis Dashboard")
     st.caption("📍 **Data Scope:** This analysis is based on 2024 German Power Market fundamentals, with plant-level data and load profiles synthesized from Fraunhofer ISE, SMARD.de, and ENTSO-E.")
@@ -433,6 +449,41 @@ Data/
             
             st.markdown("---")
             
+            # EU ETS Analysis
+            switching_data = calculate_switching_price_cached(plants)
+
+            if switching_data:
+             with st.expander("🔍 Expert Insight: Emissions & Fuel Switching", expanded=False):
+              st.markdown("### 🏭 EU ETS Market Dynamics")
+        
+            current_carbon_price = result['carbon_price_eur_ton']
+            switching_price = switching_data['switching_price_eur_ton']
+            interpretation = interpret_switching_price(current_carbon_price, switching_data)
+        
+            col_s1, col_s2, col_s3 = st.columns(3)
+        
+            with col_s1:
+             st.metric("Current Carbon Price", f"€{current_carbon_price:.2f}/ton")
+        
+            with col_s2:
+             st.metric("Switching Price", f"€{switching_price:.2f}/ton")
+        
+            with col_s3:
+             price_diff = current_carbon_price - switching_price
+             delta_text = f"€{abs(price_diff):.2f} {'above' if price_diff > 0 else 'below'}"
+            st.metric("Market Regime", interpretation['market_regime'], delta=delta_text)
+        
+            st.markdown("---")
+        
+            if interpretation['is_coal_cheaper']:
+             st.info(f"**{interpretation['market_regime']}**: {interpretation['explanation']}")
+            elif interpretation['is_gas_cheaper']:
+             st.success(f"**{interpretation['market_regime']}**: {interpretation['explanation']}")
+            else:
+             st.warning(f"**{interpretation['market_regime']}**: {interpretation['explanation']}")
+
+            st.markdown("---")
+
             # Interactive charts
             col_a, col_b = st.columns([1.2, 1])
             
@@ -597,6 +648,23 @@ Data/
             mime="text/csv"
         )
         
+        # BI-Ready Export
+        bi_ready_df = prepare_bi_export(summary_df)
+        bi_csv = bi_ready_df.to_csv(index=False)
+
+        st.download_button(
+          label="📊 Download for Power BI (Long Format)",
+          data=bi_csv,
+          file_name="power_market_bi_ready.csv",
+          mime="text/csv",
+          help="Optimized for Power BI, Tableau, and other BI tools"
+      )
+
+        # Preview
+        with st.expander("👁️ Preview BI-Ready Format"):
+             st.dataframe(bi_ready_df.head(20), use_container_width=True)
+             st.caption(f"Total rows: {len(bi_ready_df):,} | Columns: {len(bi_ready_df.columns)}")
+        
         # Key insights
         st.markdown("---")
         st.subheader("🔑 Key Insights")
@@ -640,8 +708,9 @@ Data/
     </div>
 """, unsafe_allow_html=True)
 
+
+
 # ===== RUN APP =====
 
 if __name__ == "__main__":
     main()
-
