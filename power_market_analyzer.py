@@ -1,9 +1,9 @@
-# =====================================================================
+# ==========================================================================================
 # EUROPEAN POWER MARKET ANALYZER - OPTIMIZED V2.0
 # Author: Felix Okumo
 # Date: January 2026
-# Description: Automated merit order dispatch and scenario analysis
-# =====================================================================
+# Description: Automated merit order dispatch and scenario analysis + EU ETS market Dynamics
+# ===========================================================================================
 import os
 import pandas as pd
 import numpy as np
@@ -13,6 +13,12 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
+from ets_emissions_module import (
+    calculate_switching_price,
+    interpret_switching_price,
+    prepare_bi_export,
+    add_switching_analysis_to_summary
+)
 
 # Set display options
 pd.set_option('display.max_columns', None)
@@ -1081,14 +1087,23 @@ if __name__ == "__main__":
         
         # Create summary
         summary_df = create_summary_dataframe(all_results)
-        
+
+        # Add switching price analysis
+        print("\n🔄 Adding EU ETS switching price analysis...")
+        summary_df = add_switching_analysis_to_summary(summary_df, plants)
+
         # Display comparison
         display_comparison_table(summary_df)
-        
+
         # Save CSV results
-        print("\n💾 Saving CSV results...")
+        print("\n💾 Saving results...")
         summary_df.to_csv(os.path.join(OUTPUT_DIR, 'scenario_summary.csv'), index=False)
-        print(f"   ✅ Saved to: {os.path.join(OUTPUT_DIR, 'scenario_summary.csv')}")
+        print(f"   ✅ Saved: scenario_summary.csv")
+
+        # Save BI-ready export
+        bi_ready_df = prepare_bi_export(summary_df)
+        bi_ready_df.to_csv(os.path.join(OUTPUT_DIR, 'bi_ready_export.csv'), index=False)
+        print(f"   ✅ Saved: bi_ready_export.csv (Long format for BI tools)")
         
         # CREATE ALL VISUALIZATIONS
         create_all_visualizations(all_results, summary_df, plants)
